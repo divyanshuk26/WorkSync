@@ -12,26 +12,30 @@ export const AuthProvider = ({ children }) => {
     try {
       const userProfile = await authService.getUserProfile(userId);
       setProfile(userProfile);
+      return userProfile;
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
+      return null;
     }
   };
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const initializeAuth = async () => {
       try {
         const session = await authService.getSession();
-        if (session?.user) {
-          if (mounted) setUser(session.user);
+        if (session?.user && isMounted) {
+          setUser(session.user);
           await fetchUserProfile(session.user.id);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Error initializing auth session:', error);
       } finally {
-        if (mounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -39,33 +43,30 @@ export const AuthProvider = ({ children }) => {
 
     const { data: authListener } = authService.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setUser(session.user);
+        if (isMounted) setUser(session.user);
         await fetchUserProfile(session.user.id);
       } else {
-        setUser(null);
-        setProfile(null);
+        if (isMounted) {
+          setUser(null);
+          setProfile(null);
+        }
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
 
     return () => {
-      mounted = false;
+      isMounted = false;
       authListener?.subscription?.unsubscribe();
     };
   }, []);
 
   const signIn = async (email, password) => {
-    setLoading(true);
-    try {
-      const data = await authService.signIn(email, password);
-      if (data?.user) {
-        setUser(data.user);
-        await fetchUserProfile(data.user.id);
-      }
-      return data;
-    } finally {
-      setLoading(false);
+    const data = await authService.signIn(email, password);
+    if (data?.user) {
+      setUser(data.user);
+      await fetchUserProfile(data.user.id);
     }
+    return data;
   };
 
   const signOut = async () => {

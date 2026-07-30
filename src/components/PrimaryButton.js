@@ -1,15 +1,28 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
-export default function PrimaryButton({ title, onPress, disabled = false, style, textStyle }) {
+export default function PrimaryButton({
+  title,
+  onPress,
+  disabled = false,
+  loading = false,
+  style,
+  textStyle,
+}) {
+  const isButtonDisabled = disabled || loading;
+
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && styles.disabled, style]}
+      style={[styles.button, isButtonDisabled && styles.disabled, style]}
       onPress={onPress}
-      disabled={disabled}
+      disabled={isButtonDisabled}
       activeOpacity={0.8}
     >
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+      {loading ? (
+        <ActivityIndicator color="#ffffff" size="small" />
+      ) : (
+        <Text style={[styles.text, textStyle]}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 }
@@ -22,6 +35,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
   disabled: {
     backgroundColor: '#a0c4e8',
