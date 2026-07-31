@@ -6,7 +6,7 @@
 
 # Project Overview
 
-WorkSync is a cross-platform mobile application developed using **React Native** as part of the **3J Technologies React Native Internship Assignment**.
+WorkSync is a cross-platform mobile application developed using **React Native**.
 
 The application provides a centralized platform where **Employers** can manage employees, assign tasks, monitor leave requests, and communicate with their workforce, while **Employees** can view assigned tasks, manage leave requests, and access their personal profiles.
 
