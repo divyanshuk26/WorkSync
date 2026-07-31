@@ -401,7 +401,3 @@ Screenshots will be added after completion of all core modules.
 # Author
 
 **Divyanshu Kotangale**
-
-React Native Internship Assignment
-
-3J Technologies
