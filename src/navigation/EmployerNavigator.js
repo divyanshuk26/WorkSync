@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import EmployerDashboard from '../screens/Employer/EmployerDashboard';
 import EmployeeList from '../screens/Employer/EmployeeList';
+import AddEmployee from '../screens/Employer/AddEmployee';
 import TaskManagement from '../screens/Employer/TaskManagement';
 import LeaveRequests from '../screens/Employer/LeaveRequests';
 import EmployerProfile from '../screens/Employer/EmployerProfile';
@@ -25,6 +26,14 @@ export default function EmployerNavigator() {
         name={SCREENS.EMPLOYER.EMPLOYEE_LIST}
         component={EmployeeList}
         options={{ title: 'Employees' }}
+      />
+      <Tab.Screen
+        name={SCREENS.EMPLOYER.ADD_EMPLOYEE}
+        component={AddEmployee}
+        options={{
+          title: 'Add Employee',
+          tabBarButton: () => null,
+        }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.TASK_MANAGEMENT}

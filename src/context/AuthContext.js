@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { authService } from "../services/authService";
 
 const AuthContext = createContext({});
 
@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
       setProfile(userProfile);
       return userProfile;
     } catch (error) {
-      console.error('Error fetching profile:', error);
       setProfile(null);
       return null;
     }
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }) => {
           await fetchUserProfile(session.user.id);
         }
       } catch (error) {
-        console.error('Error initializing auth session:', error);
+        // Ignored unauthenticated session error
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -41,18 +40,20 @@ export const AuthProvider = ({ children }) => {
 
     initializeAuth();
 
-    const { data: authListener } = authService.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        if (isMounted) setUser(session.user);
-        await fetchUserProfile(session.user.id);
-      } else {
-        if (isMounted) {
-          setUser(null);
-          setProfile(null);
+    const { data: authListener } = authService.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          if (isMounted) setUser(session.user);
+          await fetchUserProfile(session.user.id);
+        } else {
+          if (isMounted) {
+            setUser(null);
+            setProfile(null);
+          }
         }
-      }
-      if (isMounted) setLoading(false);
-    });
+        if (isMounted) setLoading(false);
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -101,7 +102,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

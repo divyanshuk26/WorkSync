@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { TABLES } from '../utils/constants';
 
 export const authService = {
   async signIn(email, password) {
@@ -23,7 +24,7 @@ export const authService = {
 
   async getUserProfile(userId) {
     const { data, error } = await supabase
-      .from('profiles')
+      .from(TABLES.PROFILES)
       .select('*')
       .eq('id', userId)
       .single();
