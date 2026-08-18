@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import EmployeeDashboard from '../screens/Employee/EmployeeDashboard';
+import Attendance from '../screens/Employee/Attendance';
 import MyTasks from '../screens/Employee/MyTasks';
 import ApplyLeave from '../screens/Employee/ApplyLeave';
 import EmployeeProfile from '../screens/Employee/EmployeeProfile';
@@ -38,6 +39,16 @@ export default function EmployeeNavigator() {
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
             <Feather name="grid" size={20} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name={SCREENS.EMPLOYEE.ATTENDANCE}
+        component={Attendance}
+        options={{
+          title: 'Attendance',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="clock" size={20} color={color} />
           ),
         }}
       />

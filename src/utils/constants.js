@@ -9,6 +9,7 @@ export const TABLES = {
   LEAVE_REQUESTS: 'leave_requests',
   LEAVES: 'leave_requests',
   ANNOUNCEMENTS: 'announcements',
+  ATTENDANCE: 'attendance',
 };
 
 export const TASK_STATUS = {
@@ -21,6 +22,15 @@ export const LEAVE_STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected',
+};
+
+export const ATTENDANCE_STATUS = {
+  NOT_MARKED: 'not_marked',
+  PRESENT: 'present',
+  COMPLETED: 'completed',
+  ABSENT: 'absent',
+  LEAVE: 'leave',
+  HALF_DAY: 'half_day',
 };
 
 export const SCREENS = {
@@ -40,6 +50,7 @@ export const SCREENS = {
   },
   EMPLOYEE: {
     DASHBOARD: 'EmployeeDashboard',
+    ATTENDANCE: 'Attendance',
     MY_TASKS: 'MyTasks',
     APPLY_LEAVE: 'ApplyLeave',
     PROFILE: 'EmployeeProfile',
