@@ -44,7 +44,7 @@ export const attendanceService = {
       if (error && error.code !== 'PGRST116') throw error;
       return data || null;
     } catch (err) {
-      console.warn('getTodayAttendance query warning:', err?.message);
+      console.warn('getTodayAttendance query notice:', err?.message);
       return null;
     }
   },
@@ -52,9 +52,9 @@ export const attendanceService = {
   async checkIn(userId, todayDate = this.getTodayDateString()) {
     const nowIso = new Date().toISOString();
 
-    // Check if record already exists to prevent duplicates
+    // Check if record already exists to prevent duplicate creation
     const existing = await this.getTodayAttendance(userId, todayDate);
-    if (existing && existing.check_in) {
+    if (existing && (existing.check_in || existing.id)) {
       return existing;
     }
 
@@ -68,11 +68,27 @@ export const attendanceService = {
 
     const { data, error } = await supabase
       .from(TABLES.ATTENDANCE)
-      .upsert(payload, { onConflict: 'employee_id,attendance_date' })
+      .insert([payload])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // Fallback if upsert needed due to unique constraint
+      const { data: updatedData, error: updateErr } = await supabase
+        .from(TABLES.ATTENDANCE)
+        .update({
+          check_in: nowIso,
+          status: ATTENDANCE_STATUS.PRESENT,
+        })
+        .eq('employee_id', userId)
+        .eq('attendance_date', todayDate)
+        .select()
+        .single();
+
+      if (updateErr) throw error;
+      return updatedData;
+    }
+
     return data;
   },
 
@@ -106,7 +122,7 @@ export const attendanceService = {
       if (error) throw error;
       return data || [];
     } catch (err) {
-      console.warn('getEmployeeAttendanceHistory query warning:', err?.message);
+      console.warn('getEmployeeAttendanceHistory notice:', err?.message);
       return [];
     }
   },
@@ -147,5 +163,40 @@ export const attendanceService = {
       leaveDays,
       halfDays,
     };
+  },
+
+  // Employer Side Methods
+  async getAllAttendanceRecords() {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.ATTENDANCE)
+        .select(`
+          *,
+          employee_profile:profiles!attendance_employee_id_fkey (
+            id,
+            full_name,
+            email,
+            department,
+            designation
+          )
+        `)
+        .order('attendance_date', { ascending: false });
+
+      if (error) {
+        // Fallback if foreign key alias constraint name differs
+        const { data: plainData, error: plainError } = await supabase
+          .from(TABLES.ATTENDANCE)
+          .select('*')
+          .order('attendance_date', { ascending: false });
+
+        if (plainError) throw plainError;
+        return plainData || [];
+      }
+
+      return data || [];
+    } catch (err) {
+      console.warn('getAllAttendanceRecords notice:', err?.message);
+      return [];
+    }
   },
 };

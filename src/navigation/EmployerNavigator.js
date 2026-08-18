@@ -10,6 +10,7 @@ import TaskManagement from '../screens/Employer/TaskManagement';
 import CreateTask from '../screens/Employer/CreateTask';
 import EditTask from '../screens/Employer/EditTask';
 import LeaveRequests from '../screens/Employer/LeaveRequests';
+import EmployerAttendance from '../screens/Employer/EmployerAttendance';
 import EmployerProfile from '../screens/Employer/EmployerProfile';
 import { SCREENS } from '../utils/constants';
 
@@ -72,6 +73,16 @@ export default function EmployerNavigator() {
           title: 'Edit Employee',
           tabBarButton: () => null,
           tabBarItemStyle: { display: 'none' },
+        }}
+      />
+      <Tab.Screen
+        name={SCREENS.EMPLOYER.ATTENDANCE}
+        component={EmployerAttendance}
+        options={{
+          title: 'Attendance',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="clock" size={20} color={color} />
+          ),
         }}
       />
       <Tab.Screen

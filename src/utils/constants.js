@@ -46,6 +46,7 @@ export const SCREENS = {
     CREATE_TASK: 'CreateTask',
     EDIT_TASK: 'EditTask',
     LEAVE_REQUESTS: 'LeaveRequests',
+    ATTENDANCE: 'EmployerAttendance',
     PROFILE: 'EmployerProfile',
   },
   EMPLOYEE: {
