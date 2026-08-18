@@ -1,5 +1,7 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Feather } from '@expo/vector-icons';
 import EmployerDashboard from '../screens/Employer/EmployerDashboard';
 import EmployeeList from '../screens/Employer/EmployeeList';
 import AddEmployee from '../screens/Employer/AddEmployee';
@@ -18,17 +20,41 @@ export default function EmployerNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: '#0066cc',
+        tabBarInactiveTintColor: '#64748b',
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e2e8f0',
+          borderTopWidth: 1,
+          height: Platform.OS === 'web' ? 60 : 64,
+          paddingBottom: Platform.OS === 'web' ? 8 : 10,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
       }}
     >
       <Tab.Screen
         name={SCREENS.EMPLOYER.DASHBOARD}
         component={EmployerDashboard}
-        options={{ title: 'Dashboard' }}
+        options={{
+          title: 'Dashboard',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="grid" size={20} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.EMPLOYEE_LIST}
         component={EmployeeList}
-        options={{ title: 'Employees' }}
+        options={{
+          title: 'Employees',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="users" size={20} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.ADD_EMPLOYEE}
@@ -36,6 +62,7 @@ export default function EmployerNavigator() {
         options={{
           title: 'Add Employee',
           tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
@@ -44,12 +71,18 @@ export default function EmployerNavigator() {
         options={{
           title: 'Edit Employee',
           tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.TASK_MANAGEMENT}
         component={TaskManagement}
-        options={{ title: 'Tasks' }}
+        options={{
+          title: 'Tasks',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="check-square" size={20} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.CREATE_TASK}
@@ -57,6 +90,7 @@ export default function EmployerNavigator() {
         options={{
           title: 'Create Task',
           tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
@@ -65,17 +99,28 @@ export default function EmployerNavigator() {
         options={{
           title: 'Edit Task',
           tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none' },
         }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.LEAVE_REQUESTS}
         component={LeaveRequests}
-        options={{ title: 'Leaves' }}
+        options={{
+          title: 'Leaves',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="calendar" size={20} color={color} />
+          ),
+        }}
       />
       <Tab.Screen
         name={SCREENS.EMPLOYER.PROFILE}
         component={EmployerProfile}
-        options={{ title: 'Profile' }}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="user" size={20} color={color} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );
