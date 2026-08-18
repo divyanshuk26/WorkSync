@@ -7,20 +7,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
+  TouchableOpacity,
 } from "react-native";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useAuth } from "../../context/AuthContext";
-
-console.log("LoginScreen Render");
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // react state comtrols TextInput values 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fillCredentials = (demoEmail, demoPassword) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    if (errorMessage) setErrorMessage("");
+  };
 
   const validateForm = () => {
     const trimmedEmail = email.trim();
@@ -125,6 +128,38 @@ export default function LoginScreen() {
             disabled={isSubmitting}
             style={styles.button}
           />
+
+          {/* Demo Credentials Container */}
+          <View style={styles.demoCredentialsContainer}>
+            <Text style={styles.demoTitle}>🔑 Quick Demo Credentials</Text>
+            <Text style={styles.demoSubtitle}>Tap a card below to auto-fill details:</Text>
+
+            <View style={styles.demoCardsWrapper}>
+              <TouchableOpacity
+                style={styles.demoCard}
+                onPress={() => fillCredentials("employer@worksync.com", "Employer@123")}
+                activeOpacity={0.7}
+              >
+                <View style={styles.demoBadgeEmployer}>
+                  <Text style={styles.demoRoleEmployer}>Employer Role</Text>
+                </View>
+                <Text style={styles.demoEmail}>employer@worksync.com</Text>
+                <Text style={styles.demoPass}>Password: Employer@123</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.demoCard}
+                onPress={() => fillCredentials("employee@worksync.com", "Employee@123")}
+                activeOpacity={0.7}
+              >
+                <View style={styles.demoBadgeEmployee}>
+                  <Text style={styles.demoRoleEmployee}>Employee Role</Text>
+                </View>
+                <Text style={styles.demoEmail}>employee@worksync.com</Text>
+                <Text style={styles.demoPass}>Password: Employee@123</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -144,7 +179,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 28,
   },
   title: {
     fontSize: 32,
@@ -173,7 +208,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   label: {
     fontSize: 14,
@@ -193,5 +228,70 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  demoCredentialsContainer: {
+    marginTop: 28,
+    padding: 16,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  demoTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 2,
+  },
+  demoSubtitle: {
+    fontSize: 13,
+    color: "#64748b",
+    marginBottom: 12,
+  },
+  demoCardsWrapper: {
+    gap: 10,
+  },
+  demoCard: {
+    backgroundColor: "#ffffff",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+  },
+  demoBadgeEmployer: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e0f2fe",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  demoRoleEmployer: {
+    color: "#0369a1",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  demoBadgeEmployee: {
+    alignSelf: "flex-start",
+    backgroundColor: "#dcfce7",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  demoRoleEmployee: {
+    color: "#15803d",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  demoEmail: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  demoPass: {
+    fontSize: 13,
+    color: '#64748b',
+    marginTop: 2,
   },
 });
