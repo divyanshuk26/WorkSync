@@ -6,7 +6,7 @@ const AuthContext = createContext({});
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // use state component memory react state
 
   const fetchUserProfile = async (userId) => {
     try {
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         if (session?.user && isMounted) {
           setUser(session.user);
           await fetchUserProfile(session.user.id);
-        }
+        } 
       } catch (error) {
         // Ignored unauthenticated session error
       } finally {

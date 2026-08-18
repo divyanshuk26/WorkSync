@@ -8,7 +8,7 @@ import { ROLES } from '../utils/constants';
 
 export default function AppNavigator() {
   const { user, role, loading } = useAuth();
-
+// Conditional rendering 
   if (loading) {
     return <LoadingSpinner />;
   }

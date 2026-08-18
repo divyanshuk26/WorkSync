@@ -1,13 +1,13 @@
-import { supabase } from '../config/supabase';
-import { TABLES, ROLES } from '../utils/constants';
+import { supabase } from "../config/supabase";
+import { TABLES, ROLES } from "../utils/constants";
 
 export const employeeService = {
   async getEmployeeCount() {
     const { count, error } = await supabase
       .from(TABLES.PROFILES)
-      .select('*', { count: 'exact', head: true })
-      .eq('role', ROLES.EMPLOYEE);
-
+      .select("*", { count: "exact", head: true })
+      .eq("role", ROLES.EMPLOYEE);
+    // showing total employees on dashbord
     if (error) throw error;
     return count || 0;
   },
@@ -15,15 +15,22 @@ export const employeeService = {
   async getEmployees() {
     const { data, error } = await supabase
       .from(TABLES.PROFILES)
-      .select('*')
-      .eq('role', ROLES.EMPLOYEE)
-      .order('created_at', { ascending: false });
-
+      .select("*")
+      .eq("role", ROLES.EMPLOYEE)
+      .order("created_at", { ascending: false }); // newest employees on top
+    //fetching all the employees
     if (error) throw error;
     return data || [];
   },
 
-  async addEmployee({ email, password, fullName, department, designation, phone }) {
+  async addEmployee({
+    email,
+    password,
+    fullName,
+    department,
+    designation,
+    phone,
+  }) {
     // 1. Create Auth User
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -40,7 +47,7 @@ export const employeeService = {
 
     const userId = authData?.user?.id;
     if (!userId) {
-      throw new Error('User creation failed.');
+      throw new Error("User creation failed.");
     }
 
     // 2. Insert / Upsert Profile into profiles table matching exact database schema
@@ -50,9 +57,9 @@ export const employeeService = {
         id: userId,
         email: email,
         full_name: fullName,
-        department: department || '',
-        designation: designation || '',
-        phone: phone || '',
+        department: department || "",
+        designation: designation || "",
+        phone: phone || "",
         role: ROLES.EMPLOYEE,
         is_active: true,
       })
@@ -67,7 +74,7 @@ export const employeeService = {
     const { data, error } = await supabase
       .from(TABLES.PROFILES)
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -79,7 +86,7 @@ export const employeeService = {
     const { error } = await supabase
       .from(TABLES.PROFILES)
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) throw error;
     return true;

@@ -7,20 +7,21 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  TouchableOpacity,
 } from 'react-native';
 import AppHeader from '../../components/AppHeader';
 import PrimaryButton from '../../components/PrimaryButton';
 import { employeeService } from '../../services/employeeService';
 import { SCREENS } from '../../utils/constants';
 
-export default function AddEmployee({ navigation }) {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [department, setDepartment] = useState('');
-  const [designation, setDesignation] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
+export default function EditEmployee({ route, navigation }) {
+  const employee = route?.params?.employee || {};
+
+  const [fullName, setFullName] = useState(employee.full_name || '');
+  const [department, setDepartment] = useState(employee.department || '');
+  const [designation, setDesignation] = useState(employee.designation || '');
+  const [phone, setPhone] = useState(employee.phone || '');
+  const [isActive, setIsActive] = useState(employee.is_active !== false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -30,28 +31,10 @@ export default function AddEmployee({ navigation }) {
       setErrorMessage('Full name is required.');
       return false;
     }
-
-    const emailTrimmed = email.trim();
-    if (!emailTrimmed) {
-      setErrorMessage('Email address is required.');
-      return false;
-    }
-s
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(emailTrimmed)) {
-      setErrorMessage('Please enter a valid email address.');
-      return false;
-    }
-
-    if (!password || password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
-      return false;
-    }
-
     return true;
   };
 
-  const handleAddEmployee = async () => {
+  const handleUpdateEmployee = async () => {
     setErrorMessage('');
     setSuccessMessage('');
 
@@ -61,16 +44,15 @@ s
 
     setIsSubmitting(true);
     try {
-      await employeeService.addEmployee({
-        email: email.trim(),
-        password,
-        fullName: fullName.trim(),
+      await employeeService.updateEmployee(employee.id, {
+        full_name: fullName.trim(),
         department: department.trim(),
         designation: designation.trim(),
         phone: phone.trim(),
+        is_active: isActive,
       });
 
-      setSuccessMessage('Employee created successfully!');
+      setSuccessMessage('Employee profile updated successfully!');
 
       setTimeout(() => {
         if (navigation?.canGoBack()) {
@@ -78,9 +60,9 @@ s
         } else {
           navigation.navigate(SCREENS.EMPLOYER.EMPLOYEE_LIST);
         }
-      }, 1200);
+      }, 1000);
     } catch (error) {
-      setErrorMessage(error?.message || 'Failed to add employee. Please try again.');
+      setErrorMessage(error?.message || 'Failed to update employee profile.');
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +73,7 @@ s
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <AppHeader title="Add Employee" subtitle="Register new organization member" />
+      <AppHeader title="Edit Employee" subtitle="Update member profile & status" />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.formCard}>
           {errorMessage ? (
@@ -107,25 +89,22 @@ s
           ) : null}
 
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email Address (Read-Only)</Text>
+            <TextInput
+              style={[styles.input, styles.readOnlyInput]}
+              value={employee.email || ''}
+              editable={false}
+            />
+            <Text style={styles.readOnlyNote}>Email belongs to authentication account and cannot be modified.</Text>
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Full Name *</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. John Doe"
               value={fullName}
               onChangeText={setFullName}
-              editable={!isSubmitting}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="john@organization.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
               editable={!isSubmitting}
             />
           </View>
@@ -142,7 +121,7 @@ s
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Designation / Position</Text>
+            <Text style={styles.label}>Designation</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Frontend Developer"
@@ -165,20 +144,51 @@ s
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Account Password *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Min. 6 characters"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!isSubmitting}
-            />
+            <Text style={styles.label}>Account Status</Text>
+            <View style={styles.statusToggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.statusOption,
+                  isActive && styles.statusOptionActiveGreen,
+                ]}
+                onPress={() => !isSubmitting && setIsActive(true)}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text
+                  style={[
+                    styles.statusOptionText,
+                    isActive && styles.statusOptionTextActiveGreen,
+                  ]}
+                >
+                  Active
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.statusOption,
+                  !isActive && styles.statusOptionInactiveGray,
+                ]}
+                onPress={() => !isSubmitting && setIsActive(false)}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text
+                  style={[
+                    styles.statusOptionText,
+                    !isActive && styles.statusOptionTextInactiveGray,
+                  ]}
+                >
+                  Inactive
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <PrimaryButton
-            title="Create Employee Profile"
-            onPress={handleAddEmployee}
+            title="Save Changes"
+            onPress={handleUpdateEmployee}
             loading={isSubmitting}
             disabled={isSubmitting}
             style={styles.submitButton}
@@ -225,6 +235,51 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: '#1a1a1a',
+  },
+  readOnlyInput: {
+    backgroundColor: '#eef1f5',
+    color: '#64748b',
+    borderColor: '#cbd5e1',
+  },
+  readOnlyNote: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4,
+  },
+  statusToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    padding: 4,
+    gap: 6,
+  },
+  statusOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusOptionActiveGreen: {
+    backgroundColor: '#def7ec',
+    borderColor: '#bcf0da',
+    borderWidth: 1,
+  },
+  statusOptionInactiveGray: {
+    backgroundColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
+    borderWidth: 1,
+  },
+  statusOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  statusOptionTextActiveGreen: {
+    color: '#03543f',
+  },
+  statusOptionTextInactiveGray: {
+    color: '#334155',
   },
   errorBanner: {
     backgroundColor: '#fde8e8',
