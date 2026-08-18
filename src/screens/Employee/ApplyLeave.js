@@ -10,7 +10,9 @@ import {
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import AppHeader from '../../components/AppHeader';
 import PrimaryButton from '../../components/PrimaryButton';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -20,6 +22,11 @@ import { useAuth } from '../../context/AuthContext';
 import { LEAVE_STATUS } from '../../utils/constants';
 
 const LEAVE_TYPES = ['Casual', 'Sick', 'Emergency', 'Other'];
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function ApplyLeave({ navigation }) {
   const { user } = useAuth();
@@ -36,6 +43,11 @@ export default function ApplyLeave({ navigation }) {
 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Calendar Modal State
+  const [pickerTarget, setPickerTarget] = useState(null); // 'start' | 'end' | null
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
 
   const fetchLeaveHistory = useCallback(async (isRefresh = false) => {
     if (!user?.id) return;
@@ -68,6 +80,17 @@ export default function ApplyLeave({ navigation }) {
     return unsubscribe;
   }, [navigation, fetchLeaveHistory]);
 
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d} ${shortMonths[m] || ''} ${y}`;
+  };
+
   const calculateDays = (startStr, endStr) => {
     if (!startStr || !endStr) return 1;
     const start = new Date(startStr);
@@ -79,22 +102,99 @@ export default function ApplyLeave({ navigation }) {
     return diffDays;
   };
 
+  const openDatePicker = (target) => {
+    setPickerTarget(target);
+    const activeVal = target === 'start' ? startDate : endDate;
+    if (activeVal) {
+      const parts = activeVal.split('-').map(Number);
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        setViewYear(parts[0]);
+        setViewMonth(parts[1] - 1);
+        return;
+      }
+    }
+    const today = new Date();
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
+  };
+
+  const closeDatePicker = () => {
+    setPickerTarget(null);
+  };
+
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  const isDateDisabled = (day) => {
+    const cellDate = new Date(viewYear, viewMonth, day);
+    cellDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (pickerTarget === 'start') {
+      return cellDate < today;
+    }
+
+    if (pickerTarget === 'end') {
+      const minEnd = startDate ? new Date(startDate + 'T00:00:00') : today;
+      minEnd.setHours(0, 0, 0, 0);
+      return cellDate < minEnd;
+    }
+
+    return false;
+  };
+
+  const handleSelectDay = (day) => {
+    const mStr = String(viewMonth + 1).padStart(2, '0');
+    const dStr = String(day).padStart(2, '0');
+    const dateStr = `${viewYear}-${mStr}-${dStr}`;
+
+    if (pickerTarget === 'start') {
+      setStartDate(dateStr);
+      // Auto update/reset End Date if it is now before the new Start Date
+      if (endDate && new Date(endDate + 'T00:00:00') < new Date(dateStr + 'T00:00:00')) {
+        setEndDate(dateStr);
+      }
+    } else if (pickerTarget === 'end') {
+      setEndDate(dateStr);
+    }
+
+    if (errorMessage) setErrorMessage('');
+    closeDatePicker();
+  };
+
   const validateForm = () => {
     if (!leaveType) {
       setErrorMessage('Please select a leave type.');
       return false;
     }
-    if (!startDate.trim()) {
-      setErrorMessage('Start date is required.');
+    if (!startDate) {
+      setErrorMessage('Please select a start date.');
       return false;
     }
-    if (!endDate.trim()) {
-      setErrorMessage('End date is required.');
+    if (!endDate) {
+      setErrorMessage('Please select an end date.');
       return false;
     }
 
-    const start = new Date(startDate.trim());
-    const end = new Date(endDate.trim());
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
 
     if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
       if (end < start) {
@@ -124,8 +224,8 @@ export default function ApplyLeave({ navigation }) {
       await leaveService.createLeaveRequest({
         employee_id: user.id,
         leave_type: leaveType,
-        start_date: startDate.trim(),
-        end_date: endDate.trim(),
+        start_date: startDate,
+        end_date: endDate,
         reason: reason.trim(),
       });
 
@@ -178,7 +278,7 @@ export default function ApplyLeave({ navigation }) {
 
         <View style={styles.datesRow}>
           <Text style={styles.datesText}>
-            📅 {item.start_date} to {item.end_date}
+            📅 {formatDisplayDate(item.start_date)} to {formatDisplayDate(item.end_date)}
           </Text>
           <Text style={styles.daysText}>({numDays} {numDays === 1 ? 'day' : 'days'})</Text>
         </View>
@@ -189,6 +289,19 @@ export default function ApplyLeave({ navigation }) {
       </View>
     );
   };
+
+  // Calendar Grid Calculation
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  const calendarCells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    calendarCells.push(null);
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarCells.push(day);
+  }
+
+  const activeDateVal = pickerTarget === 'start' ? startDate : endDate;
 
   return (
     <KeyboardAvoidingView
@@ -246,27 +359,36 @@ export default function ApplyLeave({ navigation }) {
             </View>
           </View>
 
+          {/* Date Picker Buttons */}
           <View style={styles.rowInputs}>
             <View style={[styles.inputGroup, styles.flex1]}>
               <Text style={styles.label}>Start Date *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                value={startDate}
-                onChangeText={setStartDate}
-                editable={!isSubmitting}
-              />
+              <TouchableOpacity
+                style={styles.dateInputButton}
+                onPress={() => !isSubmitting && openDatePicker('start')}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text style={startDate ? styles.dateTextSelected : styles.dateTextPlaceholder}>
+                  {startDate ? formatDisplayDate(startDate) : 'Select start date'}
+                </Text>
+                <Feather name="calendar" size={18} color="#64748b" />
+              </TouchableOpacity>
             </View>
 
             <View style={[styles.inputGroup, styles.flex1]}>
               <Text style={styles.label}>End Date *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                value={endDate}
-                onChangeText={setEndDate}
-                editable={!isSubmitting}
-              />
+              <TouchableOpacity
+                style={styles.dateInputButton}
+                onPress={() => !isSubmitting && openDatePicker('end')}
+                activeOpacity={0.8}
+                disabled={isSubmitting}
+              >
+                <Text style={endDate ? styles.dateTextSelected : styles.dateTextPlaceholder}>
+                  {endDate ? formatDisplayDate(endDate) : 'Select end date'}
+                </Text>
+                <Feather name="calendar" size={18} color="#64748b" />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -313,6 +435,101 @@ export default function ApplyLeave({ navigation }) {
           )}
         </View>
       </ScrollView>
+
+      {/* Cross-Platform Calendar Modal */}
+      <Modal
+        visible={Boolean(pickerTarget)}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDatePicker}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={closeDatePicker}
+        >
+          <TouchableOpacity
+            style={styles.calendarCard}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>
+                {pickerTarget === 'start' ? 'Select Start Date' : 'Select End Date'}
+              </Text>
+              <TouchableOpacity onPress={closeDatePicker} style={styles.closeIconButton}>
+                <Feather name="x" size={20} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Month / Year Navigator */}
+            <View style={styles.monthNavRow}>
+              <TouchableOpacity onPress={handlePrevMonth} style={styles.navArrowButton}>
+                <Feather name="chevron-left" size={22} color="#1e293b" />
+              </TouchableOpacity>
+              <Text style={styles.monthNavTitle}>
+                {MONTH_NAMES[viewMonth]} {viewYear}
+              </Text>
+              <TouchableOpacity onPress={handleNextMonth} style={styles.navArrowButton}>
+                <Feather name="chevron-right" size={22} color="#1e293b" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Weekday Labels */}
+            <View style={styles.weekdaysRow}>
+              {WEEKDAYS.map((wd) => (
+                <Text key={wd} style={styles.weekdayText}>{wd}</Text>
+              ))}
+            </View>
+
+            {/* Days Grid */}
+            <View style={styles.daysGrid}>
+              {calendarCells.map((day, idx) => {
+                if (day === null) {
+                  return <View key={`empty-${idx}`} style={styles.dayCell} />;
+                }
+
+                const mStr = String(viewMonth + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const cellDateStr = `${viewYear}-${mStr}-${dStr}`;
+
+                const disabled = isDateDisabled(day);
+                const isSelected = activeDateVal === cellDateStr;
+
+                return (
+                  <TouchableOpacity
+                    key={`day-${day}`}
+                    style={[
+                      styles.dayCell,
+                      isSelected && styles.dayCellSelected,
+                      disabled && styles.dayCellDisabled,
+                    ]}
+                    onPress={() => !disabled && handleSelectDay(day)}
+                    disabled={disabled}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.dayText,
+                        isSelected && styles.dayTextSelected,
+                        disabled && styles.dayTextDisabled,
+                      ]}
+                    >
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Footer Close */}
+            <TouchableOpacity style={styles.cancelModalButton} onPress={closeDatePicker}>
+              <Text style={styles.cancelModalText}>Cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -360,6 +577,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
+    color: '#1a1a1a',
+  },
+  dateInputButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#dcdcdc',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dateTextPlaceholder: {
+    fontSize: 14,
+    color: '#999999',
+  },
+  dateTextSelected: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#1a1a1a',
   },
   textArea: {
@@ -511,5 +748,112 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#475569',
     fontStyle: 'italic',
+  },
+
+  /* Calendar Modal Styles */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  calendarCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  closeIconButton: {
+    padding: 4,
+  },
+  monthNavRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  navArrowButton: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+  },
+  monthNavTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  weekdaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  weekdayText: {
+    width: 40,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  dayCell: {
+    width: '14.28%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 2,
+    borderRadius: 8,
+  },
+  dayCellSelected: {
+    backgroundColor: '#0066cc',
+  },
+  dayCellDisabled: {
+    opacity: 0.35,
+  },
+  dayText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  dayTextSelected: {
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  dayTextDisabled: {
+    color: '#94a3b8',
+  },
+  cancelModalButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelModalText: {
+    color: '#475569',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
